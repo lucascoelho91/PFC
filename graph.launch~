@@ -1,0 +1,16 @@
+<launch>
+    <param name="graph/map" type="string" 
+           value="$(find voronoi)/map.pgm" />
+
+    <!-- Discretization - obstacle value threshold -->
+    <param name="graph/threshold" type="int" value="250"/>
+
+    <!-- resolution of the map -->
+    <param name="graph/resolution" type="double" value="0.05"/>
+
+    <!-- discretization of the pixels -->
+    <param name="graph/discretization" type="double" value="10.0"/>
+
+    <node name="graph" pkg="voronoi" type="graph"
+          output="screen" />
+</launch>
