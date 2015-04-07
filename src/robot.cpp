@@ -52,3 +52,4 @@ robot::robot(int id, double weight,
 	this->name = name;
 	this->claw = controlLaw();
 }
+

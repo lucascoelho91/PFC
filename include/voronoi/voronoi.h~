@@ -24,30 +24,21 @@ class voronoi
 {
 	private:
 		std::vector <robot> robots;
-		
-
-        Graph graph;
+		graph Graph;
 
 		int iterations;
 
-		std:string robotsDir;
-		std:string imagesDir;
-		std:string resultsDir;
+		char* mapDir;
+		char* robotsDir;
+		char* imagesDir;
+		char* resultsDir;
 
 		robot* master;
 
         ros::NodeHandle& nh;
 
-        int controlLawType;
-
-        const int PIERSON_FIGUEIREDO = 1;
-        const int PIMENTA_FIGUEIREDO = 2;
-
 	public:
 		void initRobots();
-
-        voronoi();
-
 		void voronoiDijkstra();
 
 		void setROSPublishers(std::string sulfixPose = "odom");

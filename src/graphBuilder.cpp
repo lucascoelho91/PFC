@@ -17,26 +17,26 @@ int coord(int x, int y) //dá o valor do vizinho, de 0 a 7, sendo 0 ao norte, 1 
     else return 0;
 }
 
-double graph::getSquareSize(){
+double Graph::getSquareSize(){
     return this->squareSize;
 }
 
-double graph::getSizeMetersPixel(){
+double Graph::getSizeMetersPixel(){
     return this->sizeMetersPixel;
 }
 
-node* graph::getNodeByIndex(int x, int y)
+node* Graph::getNodeByIndex(int x, int y)
 {
     return matrixGraph[y][x];
 }
 
-void graph::openMapFile(char* file, char* outFile)
+void Graph::openMapFile(char* file, char* outFile)
 {
     mapFile = fopen(file, "r");
     outmap = fopen(outFile, "w+");
 }
 
-void graph::readMap(uint8_t threshold)
+void Graph::readMap(uint8_t threshold)
 {
 	int i, j, k;
 	uint8_t c;
@@ -81,7 +81,7 @@ void graph::readMap(uint8_t threshold)
     free(image);
 }
 
-void graph::printFile()
+void Graph::printFile()
 {
     fprintf(outmap, "P6\n");   //P6 SIGNIFICA CODIFICAÇÃO CRU, COLORIDO, ARQUIVO PPM
     fprintf(outmap, "%d %d\n", (int) dim.x, (int) dim.y);
@@ -99,7 +99,7 @@ void graph::printFile()
     fclose(outmap);
 }
 
-void graph::DrawSquare(int size, int i, int j, rgb pixel)
+void Graph::DrawSquare(int size, int i, int j, rgb pixel)
 {
     int x, y, k, l;
     if(size==0)
@@ -117,7 +117,7 @@ void graph::DrawSquare(int size, int i, int j, rgb pixel)
     }
 }
 
-void graph::verticesAllocation()
+void Graph::verticesAllocation()
 {
     int i, j;
     node* n;
@@ -157,7 +157,7 @@ void graph::verticesAllocation()
 }
 
 
-void graph::connectNeighbors()
+void Graph::connectNeighbors()
 {
 	rgb pixelgreen;
 	pixelgreen.r=0;
@@ -220,7 +220,12 @@ void graph::connectNeighbors()
 	}
 }
 
-graph::graph (double sizeDiscretization, char* file, double sizeMetersPixel, char* outFile)
+Graph::Graph()
+{
+    // VOID CONSTRUCTOR
+}
+
+void Graph::init (double sizeDiscretization, char* file, double sizeMetersPixel, char* outFile)
 {
 	int i, j;
 	openMapFile(file, outFile);
@@ -279,7 +284,7 @@ graph::graph (double sizeDiscretization, char* file, double sizeMetersPixel, cha
 
 }
 
-void graph::BuildGraph(int threshold=250)
+void Graph::BuildGraph(int threshold=250)
 {
 	readMap(threshold);
     verticesAllocation();
@@ -288,16 +293,12 @@ void graph::BuildGraph(int threshold=250)
 }
 
 
-
-int main( int argc, char** argv )
+void Graph::GetParametersAndBuildGraph()
 {
-    ros::init(argc, argv, "PID");
-    ros::NodeHandle n;
-    
-	double discretization, resolution;
+
+    double discretization, resolution;
     int threshold = 250;
     std::string mapFile, outFile;
-
     if(ros::param::get("/graph/discretization", discretization));
     else{
         ROS_INFO("Error getting parameter square size parameter");
@@ -324,11 +325,23 @@ int main( int argc, char** argv )
         exit(1);
     }*/
 
-    graph Grafo(discretization, (char*) mapFile.c_str(), resolution, (char*) outFile.c_str());
+    this->init(discretization, (char*) mapFile.c_str(), resolution, (char*) outFile.c_str());
+
+    BuildGraph(threshold); 
+
+}
 
 
-	Grafo.BuildGraph(threshold); 
+
+int main( int argc, char** argv )
+{
+    ros::init(argc, argv, "PID");
+    ros::NodeHandle n;
+    
+    Graph Grafo;
+
+    Grafo.GetParametersAndBuildGraph();
+    
 
 	return 0;
-
 }

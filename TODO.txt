@@ -1,0 +1,8 @@
+TODO
+
+Lista de prioridades do projeto
+
+- Testar criação de robôs no mapa 
+- Testar simulação da lei de controle com robôs simulados
+- Revisar a implementação do dijkstra discreto
+- Revisar o cálculo das funções H e delH

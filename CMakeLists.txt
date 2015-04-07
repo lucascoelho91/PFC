@@ -111,11 +111,17 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )s
 
-add_executable(graph src/graphBuilder.cpp)
+add_executable(voronoi src/adaptingVoronoi.cpp)
+target_link_libraries(voronoi
+   ${catkin_LIBRARIES}
+ )
 
+add_executable(graph src/graphBuilder.cpp)
 target_link_libraries(graph
    ${catkin_LIBRARIES}
  )
+
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(voronoi_node voronoi_generate_messages_cpp)
