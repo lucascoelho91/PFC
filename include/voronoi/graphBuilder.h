@@ -23,7 +23,7 @@
 
 #include <voronoi/Vector2.h>
 #include <voronoi/node.h>
-#include <voronoi/robot.h>
+#include <voronoi/Robot.h>
 #include <voronoi/rgb.h>
 
 #include <ros/ros.h>

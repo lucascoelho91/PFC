@@ -1,4 +1,6 @@
 #include "voronoi/robot.h"
+#include "voronoi/voronoi.h"
+#include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <ros/ros.h>
@@ -15,11 +17,18 @@ int main(int argc, char* argv[])
 
 	int id = atoi(argv[1]);
 
-	ros::NodeHandle n;
-	ros::init(argc, argv);
+	std::string nodeName = "voronoi_" + boost::lexical_cast<std::string>(id);
 
 
-	voronoi voronoiAdapting(id, n);
+	ros::NodeHandle nh;
+	ros::init(argc, argv, nodeName);
+
+
+	voronoi voronoiAdapting(nh, id);
+
+	voronoiAdapting.initRobots();
+
+	voronoiAdapting.runIteration();
 	
 	return 0;
 }

@@ -98,11 +98,12 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a cpp library
-#add_library(voronoi
-#   src/graphBuilder.cpp
-#   src/robot.cpp
-#)
+#Declare a cpp library
+add_library(adaptingVoronoi
+   src/graphBuilder.cpp
+   src/Robot.cpp
+   src/Voronoi.cpp
+)
 
 ## Declare a cpp executable
 #add_executable(voronoi src/voronoi.cpp)
@@ -113,6 +114,7 @@ include_directories(
 
 add_executable(voronoi src/adaptingVoronoi.cpp)
 target_link_libraries(voronoi
+	adaptingVoronoi
    ${catkin_LIBRARIES}
  )
 
