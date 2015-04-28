@@ -30,6 +30,15 @@
 
 class Graph  //
 {
+    public:
+        int squareSize;        //tamanho do quadrado que um vértice ocupa, EM PIXELS
+        int sizeMetersPixel;
+
+        Vector2 dim;
+        Vector2 sizeMap; //tamanho em metros do mapa
+
+        Vector2 vertices;
+
     private:
 		std::vector < std::vector <node*> > matrixGraph; //matriz de vértices que é o grafo
 
@@ -37,13 +46,7 @@ class Graph  //
         rgb** visualization; //essa variável é uma cópia de colors e serve para ser editada para incluir os pixels para visualização da região
         rgb** image;
 
-        Vector2 dim;
-        Vector2 sizeMap; //tamanho em metros do mapa
 
-        Vector2 vertices;
-
-        int squareSize;        //tamanho do quadrado que um vértice ocupa, EM PIXELS
-        int sizeMetersPixel;
 
         int8_t drawLines; //especifica śe é para desenhar linhas na visualização do grafo montado
 
@@ -57,7 +60,7 @@ class Graph  //
 
         void ClearGraph(); //limpa o grafo, zerando os valores de owner, visited, have_robot, entre outros
 
-        node* coord_to_cell(double y, double x);          //dada uma posição, o programa responde o vértice que esse ponto está contido
+        node* PoseToNode(double y, double x);          //dada uma posição, o programa responde o vértice que esse ponto está contido
 
         Graph ();
 

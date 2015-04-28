@@ -44,3 +44,30 @@ Robot::Robot(int id, double weight,
 	this->name = name;
 }
 
+double Robot::getX(){
+	return this->pose.x;
+}
+
+double Robot::getY(){
+	return this->pose.y;
+}
+
+double Robot::getErrorX(){
+	return goal.x - getX();
+}	
+
+double Robot::getErrorY(){
+	return goal.y - getY();
+}
+
+double Robot::getTheta(){
+	return poseOdom.pose.pose.orientation.z;
+}
+
+void Robot::clearControlLaw() //clear all fields
+{ 
+	controlIntegral.x = 0; 
+	controlIntegral.y = 0;
+	centroid.x = 0;
+	centroid.y = 0;
+}

@@ -55,27 +55,13 @@ class Robot : public controlLaw
 		Vector2 getPose();
 		double getX();
 		double getY();
-
-		double getErrorX(){
-			return goal.x - getX();
-		}	
-
-		double getErrorY(){
-			return goal.y - getY();
-		}
+		double getErrorX();
+		double getErrorY();
 
 		std::string getName();
-		Robot(int id, double weight, 
-			   rgb color,
-			    std::string name);
+		Robot(int id, double weight, rgb color, std::string name);
 
-		void clearControlLaw() //clear all fields
-	    { 
-	    	controlIntegral.x = 0; 
-	    	controlIntegral.y = 0;
-	    	centroid.x = 0;
-	    	centroid.y = 0;
-	    }
+		void clearControlLaw(); //clear all fields
 };
 
 #endif /* ROBOT_H_ */

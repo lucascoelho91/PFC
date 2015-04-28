@@ -330,8 +330,15 @@ void Graph::GetParametersAndBuildGraph()
 
 }
 
+node* Graph::PoseToNode(double x, double y)
+{
+    double ratio = squareSize*sizeMetersPixel;
+
+    return matrixGraph[ (int) x/ratio ][ (int) y/ratio ];
+}
 
 
+/*
 int main( int argc, char** argv )
 {
     ros::init(argc, argv, "PID");
@@ -343,4 +350,4 @@ int main( int argc, char** argv )
     
 
 	return 0;
-}
+}*/

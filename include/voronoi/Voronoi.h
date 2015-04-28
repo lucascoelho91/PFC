@@ -38,7 +38,7 @@ class Voronoi
 
 		Robot* controlledRobot;
 
-        ros::NodeHandle& nh;
+        ros::NodeHandle* nh;
 
         int controlLawType;
 
@@ -50,18 +50,19 @@ class Voronoi
 
 		void voronoiDijkstra();
 
+        void calcControlLaw();
+        void saveCosts();
+
 		void setROSPublishers(std::string sulfixPose = "odom");
 		void setROSSubscribers(std::string sulfixSpeed = "cmd_vel");
 
         Robot* getrobotByID(int id);
 
 		void getParameters();
-        
-		Voronoi(ros::NodeHandle& n, int id);
+
+		Voronoi(ros::NodeHandle* n, int id);
 
         void runIteration();
-
-		reportGen report;
 };
 
 class dijkCost  //used as a cell in the priority queue used in dijstra's algorithm
@@ -99,25 +100,3 @@ class compareCost    //função usada pela Priotity Queue como critério de orde
         }
 };
 
-double PowerDist(double x, double r)  // calculates the weighted dist
-{
-    double h;
-    h= (x*x - r*r);
-    return (h);
-}
-
-Vector2 vectorSub(Vector2 a, Vector2 b)
-{
-    Vector2 ans;
-    ans.x = a.x - b.x;
-    ans.y = a.y - b.y;
-    return ans;
-}
-
-double vectorScalarProduct(Vector2 a, Vector2 b)
-{
-    double ans;
-    ans = a.x*b.x;
-    ans += a.y*b.y;
-    return ans;
-}

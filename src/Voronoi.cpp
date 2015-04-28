@@ -1,5 +1,28 @@
 #include <voronoi/Voronoi.h>
 
+double PowerDist(double x, double r)  // calculates the weighted dist
+{
+    double h;
+    h= (x*x - r*r);
+    return (h);
+}
+
+Vector2 vectorSub(Vector2 a, Vector2 b)
+{
+    Vector2 ans;
+    ans.x = a.x - b.x;
+    ans.y = a.y - b.y;
+    return ans;
+}
+
+double vectorScalarProduct(Vector2 a, Vector2 b)
+{
+    double ans;
+    ans = a.x*b.x;
+    ans += a.y*b.y;
+    return ans;
+}
+
 void Voronoi::initRobots()
 {
 	std::string robotConfFileName;
@@ -15,26 +38,27 @@ void Voronoi::initRobots()
 	rgb color;
 	std::string name;
 	node* n;
+	double weight;
 	std::ifstream robotConfFile;
 	robotConfFile.open(robotConfFileName.c_str());
 
 	while(!robotConfFile.eof())
 	{
-		if(robotConfFile >> id >> weight >> name >> color.red >> color.g >> color.b )
+		if(robotConfFile >> id >> weight >> name >> color.r >> color.g >> color.b )
 		{
 			Robot rbx(id, weight, color, name);
 			robots[i] = rbx;
 		}
 		else{
 			perror("Error while reading the robot configuration file");
-			exit();
+			exit(1);
 		}
 		i++;
 	}
 }
 
 
-Voronoi::Voronoi(ros::NodeHandle& n, int id_master)
+Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 {
 	this->nh = n;
 	std::string sulfixSpeed, sulfixPose;
@@ -51,15 +75,13 @@ Voronoi::Voronoi(ros::NodeHandle& n, int id_master)
         exit(1);
     }
 
-	Grafo.GetParametersAndBuildGraph();
+	graph.GetParametersAndBuildGraph();
 	this->initRobots();
 
-	master = getrobotByID(id_master);
+	controlledRobot = getrobotByID(id_master);
 
 	setROSSubscribers(sulfixPose);
 	setROSPublishers(sulfixSpeed);
-
-	Hfunc = new list<double>();
 }
 
 
@@ -81,7 +103,7 @@ void Voronoi::voronoiDijkstra()
 	for(int i=0; i<robots.size(); i++)
 	{
 		robot = &robots[i];
-		n = graph.coord_to_cell(robot.pose.x, robot.pose.y);
+		n = graph.PoseToNode(robot->pose.x, robot->pose.y);
 
 		robot->clearControlLaw();
 
@@ -110,7 +132,7 @@ void Voronoi::voronoiDijkstra()
 		if(k.s != NULL) // checks if this is a start node.
 		{
 			double xdif = k.s->pose.x - robot->pose.x;
-			double ydif = k.s->pose.y - r->pose.y;
+			double ydif = k.s->pose.y - robot->pose.y;
 
 			robot->controlIntegral.x += n->phi*(k.geoDist)*xdif;
 			robot->controlIntegral.y += n->phi*(k.geoDist)*ydif;
@@ -128,7 +150,7 @@ void Voronoi::voronoiDijkstra()
 
 				if (i%2) 
 					ncost *= sqrt(2);   // if it is on diagonal, multiply by sqrt(2)
-				pdist = PowerDist(k.geoDist + ncost, r->weight);
+				pdist = PowerDist(k.geoDist + ncost, robot->weight);
 
 				if( neighbor->powerDist > pdist)  // if the cost is lower than the current cost
 				{
@@ -147,20 +169,21 @@ void Voronoi::voronoiDijkstra()
 		//** neighbor best aligned with the goal **//
 
 		node* neighbor;
-		Vector2 neigborVector;
+		Vector2 neighborVector;
 		double scalarProduct;
 		int maxVec = 0;
 		int argMaxIndex = 0;
 
 		for(int i=0; i < robots.size(); i++)
 		{
-			for(int j=0, maxVec = 0, argMaxIndex = 0; j< 8; j++)
+			graph.PoseToNode(robot->pose.x, robot->pose.y);			
+			for(int j=0; j< 8; j++)
 			{
-				if(neighbor[j]!=NULL)
+				neighbor = n->neighbor[i];
+				if(neighbor != NULL)
 				{
-					neighbor = robots[i]->neighbor[j];
-					neighborVector = vectorSub(neighbor->pose, robots[i]->pose);
-					scalarProduct = vectorScalarProduct(neighborVector, robots[i].controlIntegral)
+					neighborVector = vectorSub(neighbor->pose, robots[i].pose);
+					scalarProduct = vectorScalarProduct(neighborVector, robots[i].controlIntegral);
 					if(maxVec < scalarProduct)
 					{
 						maxVec = scalarProduct;
@@ -168,8 +191,8 @@ void Voronoi::voronoiDijkstra()
 					}
 				}
 			}
+			robots[i].goal = n->neighbor[argMaxIndex]->pose;
 		}
-		goal = neighbor[argMaxIndex]->pose;
 	}
 }
 
@@ -191,7 +214,7 @@ void Voronoi::setROSSubscribers(std::string sulfixPose)
 	for(it = robots.begin(); it!=robots.end(); ++it)
 	{
 		topic = "/" + it->getName() + "/" + sulfixPose;
-		it->setPoseSubscriber(nh, topic);
+		it->setPoseSubscriber(*nh, topic);
 	}
 }
 
@@ -202,7 +225,7 @@ void Voronoi::setROSPublishers(std::string sulfixSpeed)
 	for(it = robots.begin(); it!=robots.end(); ++it)
 	{
 		topic = "/" + it->getName() + "/" + sulfixSpeed;
-		it->setSpeedPublisher(nh, topic);
+		it->setSpeedPublisher(*nh, topic);
 	}
 }
 
@@ -213,10 +236,9 @@ void Voronoi::runIteration()
 	this->saveCosts();
 }
 
-void calcControlLaw()
+void Voronoi::calcControlLaw()
 {
 	int i;
-	double = getNormControlIntegral();
 	double theta = controlledRobot->getTheta();
 	double errorX = controlledRobot->getErrorX();
 	double errorY = controlledRobot->getErrorY();
@@ -236,22 +258,22 @@ void calcControlLaw()
 	{
 		if(kv > normControlIntegral) // so the robot will eventually stop
 		{
-			kw = kw/kv * normControlIntegral
+			kw = kw/kv * normControlIntegral;
 			kv = normControlIntegral;
 		}
 		double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
         double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
 
         controlledRobot->setSpeed(v, w);
-        controlledRobot.publishSpeed();
+        controlledRobot->publishSpeed();
 	}
 }
 
-void saveCosts()
+void Voronoi::saveCosts()
 {
 	double H = 0;
 	node* n;
-	double dq = n->getSizeMetersPixel() * n->getSquareSize();
+	double dq = graph.getSizeMetersPixel() * graph.getSquareSize();
 	for(int i = 0; i < graph.dim.x; i++)
 	{
 		for(int j = 0; j < graph.dim.y; j++)
@@ -263,7 +285,7 @@ void saveCosts()
 					n = graph.getNodeByIndex(i, j);
 					H += (pow(n->powerDist, 2) + pow(n->owner->weight,2))*(n->phi)*dq;
 				}
-				n->cleanNode();
+				n->CleanNode();
 			}
 			
 		}

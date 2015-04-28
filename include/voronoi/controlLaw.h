@@ -24,7 +24,5 @@ class controlLaw
 
 	double getNormControlIntegral(){
 		return sqrt(pow(controlIntegral.x,2) + pow(controlIntegral.y, 2));
-	}
-
-	
+	}	
 };
