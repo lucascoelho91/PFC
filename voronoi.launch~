@@ -1,0 +1,31 @@
+<launch>
+    <param name="graph/map" type="string" 
+           value="$(find voronoi)/map.pgm" />
+
+	<param name="graph/outmap" type="string" 
+           value="$(find voronoi)/result.ppm" />
+
+    <!-- Discretization - obstacle value threshold -->
+    <param name="graph/threshold" type="int" value="250"/>
+
+    <!-- resolution of the map -->
+    <param name="graph/resolution" type="double" value="0.05"/>
+
+    <!-- discretization of the pixels -->
+    <param name="graph/discretization" type="double" value="10.0"/>
+
+	<param name="voronoi/speedTopic" type="string" value="cmd_vel"/>
+
+	<param name="voronoi/id" type="int" value="1"/>
+
+	<param name="voronoi/poseTopic" type="string" value="base_pose_ground_truth"/>
+
+	<param name="voronoi/robotConfFileName" type="string" value="/home/lucas/catkin_ws/src/voronoi/voronoi.conf"/>
+
+    <node name="graph" pkg="voronoi" type="voronoi"
+          output="screen" args="1" />
+
+
+
+	
+</launch>

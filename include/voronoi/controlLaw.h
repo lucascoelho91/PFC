@@ -22,6 +22,13 @@ class controlLaw
 	    	centroid.y = 0;
 	    }
 
+	void setControllerParameters(double kv_p= 1, double kw_p = 1, double d_p = 0.05)
+	{
+		kv = kv_p;
+		kw = kw_p;
+		d = d_p;
+	}
+
 	double getNormControlIntegral(){
 		return sqrt(pow(controlIntegral.x,2) + pow(controlIntegral.y, 2));
 	}	

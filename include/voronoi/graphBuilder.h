@@ -28,23 +28,27 @@
 
 #include <ros/ros.h>
 
+using namespace std;
+
 class Graph  //
 {
     public:
         int squareSize;        //tamanho do quadrado que um vértice ocupa, EM PIXELS
-        int sizeMetersPixel;
+        double sizeMetersPixel;
 
         Vector2 dim;
         Vector2 sizeMap; //tamanho em metros do mapa
 
         Vector2 vertices;
 
-    private:
-		std::vector < std::vector <node*> > matrixGraph; //matriz de vértices que é o grafo
-
+        
         rgb** colors;        //colors é o mapa da região da forma que ele foi copiado do arquivo de entrada
         rgb** visualization; //essa variável é uma cópia de colors e serve para ser editada para incluir os pixels para visualização da região
-        rgb** image;
+ 
+
+    private:
+		std::vector < std::vector <node*> > matrixGraph; //matriz de vértices que é o grafo
+       rgb** image;
 
 
 
@@ -72,6 +76,7 @@ class Graph  //
 
         double getSquareSize();
         double getSizeMetersPixel();
+        void FillSquare(double x, double y, rgb color);
 
         void DrawSquare(int size, int i, int j, rgb pixel);
 

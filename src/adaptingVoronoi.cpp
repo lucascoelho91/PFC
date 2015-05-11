@@ -3,31 +3,31 @@
 #include <boost/lexical_cast.hpp>
 
 #include <iostream>
+#include <string>
 #include <ros/ros.h>
 
+using namespace std;
 
 
-
-int main(int argc, char* argv[])
+int main(int argc,char** argv)
 {
-	if(argc != 2)
-	{
-		ROS_INFO("Please give the id of the robot");	
-	}
 
-	int id = atoi(argv[1]);
+	int id = 1;
+	int max_iterations = 10;
+	const string nodeName = "voronoi_" + boost::lexical_cast<std::string>(id);
 
-	std::string nodeName = "voronoi_" + boost::lexical_cast<std::string>(id);
-
-
+	ros::init(argc, argv, "voronoi");
 	ros::NodeHandle nh;
-	ros::init(argc, argv, nodeName);
+
+	ros::param::get("voronoi/id", id);
 
 	Voronoi voronoiAdapting(&nh, id);
+	sleep(2);
 
-	voronoiAdapting.initRobots();
-
-	voronoiAdapting.runIteration();
+	while (voronoiAdapting.getIterations() < max_iterations)
+	{
+		voronoiAdapting.runIteration();
+	}
 	
 	return 0;
 }

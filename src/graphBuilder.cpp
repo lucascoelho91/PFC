@@ -117,6 +117,17 @@ void Graph::DrawSquare(int size, int i, int j, rgb pixel)
     }
 }
 
+void Graph::FillSquare(double x, double y, rgb colorFill)
+{
+	for (int i = x - squareSize/2; i < x + squareSize/2; i++)
+	{
+		for (int j = y - squareSize/2; j < y + squareSize/2; j++)
+		{
+			visualization[j][i] = colorFill;
+		}
+	}
+}
+
 void Graph::verticesAllocation()
 {
     int i, j;
@@ -139,9 +150,10 @@ void Graph::verticesAllocation()
             {
                 matrixGraph[i][j]=(node*) malloc(sizeof(node));
                 n=matrixGraph[i][j];
-                //n->occupiable=1;
                 n->pose.x= sizeMetersPixel*(j*squareSize + squareSize/2);
                 n->pose.y= sizeMetersPixel*(i*squareSize + squareSize/2);
+                n->phi = 1;
+                n->powerDist = 999999999;
 
                 //COLORIR A IMAGEM DE SAÍDA COM UM PONTO AZUL ONDE HÁ UMA CÉLULA OCUPÁVEL
                 DrawSquare(1, i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelblue);
@@ -225,12 +237,14 @@ Graph::Graph()
     // VOID CONSTRUCTOR
 }
 
-void Graph::init (double sizeDiscretization, char* file, double sizeMetersPixel, char* outFile)
+void Graph::init (double sizeDiscretization, char* file, double resolution, char* outFile)
 {
 	int i, j;
 	openMapFile(file, outFile);
 
     squareSize = sizeDiscretization;
+    this->sizeMetersPixel = resolution;
+
     char* str = (char*) malloc(100*sizeof(char));
     //OS FGETS CAPTURAM AS INFORMAÇÕES QUE NÃO SERÃO UTILIZADAS NO PROGRAMA
 
@@ -282,6 +296,8 @@ void Graph::init (double sizeDiscretization, char* file, double sizeMetersPixel,
         image[i]=(rgb*)malloc(dim.x*sizeof(rgb));
     }
 
+
+
 }
 
 void Graph::BuildGraph(int threshold=250)
@@ -318,6 +334,10 @@ void Graph::GetParametersAndBuildGraph()
         ROS_INFO("Error getting parameter: out file.");
         exit(1);
     }
+
+    cout << "discretization" << discretization;
+    cout << "resolution" << resolution;
+
     /*if(ros::param::get("/voronoi/robotsConfFile",robotsConfFile));
     else{
         ROS_INFO("Error getting parameter: robots configuration file.");
@@ -332,22 +352,30 @@ void Graph::GetParametersAndBuildGraph()
 
 node* Graph::PoseToNode(double x, double y)
 {
-    double ratio = squareSize*sizeMetersPixel;
+    node* vx;
+    int i, j;
+    cout << "x: " << x << "y: " << y << endl;
 
-    return matrixGraph[ (int) x/ratio ][ (int) y/ratio ];
+    cout << "escala: " << getSquareSize() << endl;
+    cout << "escala: " << getSizeMetersPixel() << endl;
+    i = y/(sizeMetersPixel* squareSize);
+    j = x/(sizeMetersPixel* squareSize);
+    cout << "x: " << j << "y: " << i << endl;
+    cout.flush();
+    vx = matrixGraph[i][j];
+    return vx;
 }
 
-
-/*
-int main( int argc, char** argv )
+void Graph::ClearGraph()
 {
-    ros::init(argc, argv, "PID");
-    ros::NodeHandle n;
-    
-    Graph Grafo;
-
-    Grafo.GetParametersAndBuildGraph();
-    
-
-	return 0;
-}*/
+	node* n;
+	for(int i = 0; i < this->vertices.x; i++)
+	{
+		for(int j = 0; j < this->vertices.y; j++)
+		{
+			n = getNodeByIndex(i, j);
+			if(n != NULL)
+				n->CleanNode();
+		}
+	}
+}

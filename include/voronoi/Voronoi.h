@@ -21,6 +21,8 @@
 #include <voronoi/graphBuilder.h>
 #include <voronoi/reportGen.h>
 
+using namespace std;
+
 class Voronoi
 {
 	private:
@@ -63,6 +65,7 @@ class Voronoi
 		Voronoi(ros::NodeHandle* n, int id);
 
         void runIteration();
+        int getIterations();
 };
 
 class dijkCost  //used as a cell in the priority queue used in dijstra's algorithm
@@ -99,4 +102,7 @@ class compareCost    //função usada pela Priotity Queue como critério de orde
             else return false;
         }
 };
+
+template <class T>
+void debug(const T& myvar, string before, string after);
 

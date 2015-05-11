@@ -21,7 +21,7 @@ include_directories(
 
 
 add_executable(voronoi src/adaptingVoronoi.cpp src/graphBuilder.cpp src/Robot.cpp src/Voronoi.cpp)
-add_executable(graph src/graphBuilder.cpp)
+
 
 add_library(graphLib
    src/graphBuilder.cpp
@@ -43,12 +43,6 @@ target_link_libraries(voronoi
  )
 
 
-target_link_libraries(graph
-	graphLib
-	robotLib
-	voronoiLib
-   ${catkin_LIBRARIES}
- )
 
 # endif()
 

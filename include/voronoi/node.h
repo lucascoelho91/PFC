@@ -19,7 +19,7 @@ class node  //represents the nodees of the graph
         void CleanNode()
         {
         	owner = NULL;
-        	powerDist = -99999999;
+        	powerDist = 99999999;
         }
 };
 

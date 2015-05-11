@@ -1,0 +1,6 @@
+/** ROBOT CONFIGURATION FILE **/
+|  ID  | WEIGHT |   R   |   G   |   B   |
+	1		1		255		0		0
+	2		2		0		0		255
+	3		1		0		255		0
+	4		1		255		255		0

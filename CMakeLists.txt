@@ -17,7 +17,7 @@ catkin_package(
 include_directories( 
   include
   ${catkin_INCLUDE_DIRS}
-)
+) 
 
 
 add_executable(voronoi src/adaptingVoronoi.cpp src/graphBuilder.cpp src/Robot.cpp src/Voronoi.cpp)
