@@ -22,12 +22,14 @@ int main(int argc,char** argv)
 	ros::param::get("voronoi/id", id);
 
 	Voronoi voronoiAdapting(&nh, id);
+
+	ros::Duration loopFreq(0.2);
+
+	ros::Timer timer = nh.createTimer(loopFreq, &Voronoi::runIteration, &voronoiAdapting);
+	
 	sleep(2);
 
-	while (voronoiAdapting.getIterations() < max_iterations)
-	{
-		voronoiAdapting.runIteration();
-	}
-	
+	ros::spin();
+
 	return 0;
 }

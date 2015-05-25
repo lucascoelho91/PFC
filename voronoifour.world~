@@ -4,21 +4,23 @@ define block model
   gui_nose 0
 )
 
-define topurg laser
+define topurg ranger
 (
+    sensor( 			
+    range [ 0.0  4.0 ]
+    fov 270
+    samples 270
+  )
 
-  range_max 30.0
-  fov 270.25
-  samples 1081
   # generic model properties
   color "black"
-  size [ 0.05 0.05 0.1 ]
+  size [ 0.050 0.050 0.100 ]
 )
 
 define erratic position
 (
   #size [0.415 0.392 0.25]
-  size [0.35 0.35 0.25]
+  size [0.5 0.5 0.5]
   origin [-0.05 0 0 0]
   gui_nose 1
   drive "diff"
@@ -50,9 +52,10 @@ interval_sim 100  # simulation timestep in milliseconds
 
 window
 ( 
-  size [ 745.000 448.000 ] 
+  size [ 800.000 600.000 ] 
 
-  rotate [ 0.000 -1.560 ]
+  rotate [ 0.000 0.0 ]
+  center [ 10.5  8 ]
   scale 28.806 
 )
 
@@ -61,13 +64,12 @@ floorplan
 ( 
   name "willow"
   bitmap "map.pgm"
-  size [54.0 58.7 0.5]
-  pose [ -29.350 27.000 0 90.000 ]
+  size [20 20 0.5]
+  pose [ 10.5 8 0 0 ]
 )
 
 # throw in two robots
-erratic( pose [ -11.277 23.266 0 180.000 ] name "era" color "blue")
-erratic( pose [ -13.277 22.266 0 180.000 ] name "era2" color "blue")
-erratic( pose [ -13.277 23.266 0 180.000 ] name "era3" color "blue")
-erratic( pose [ -11.277 22.266 0 180.000 ] name "era4" color "blue")
-block( pose [ -13.924 25.020 0 180.000 ] color "red")
+erratic( pose [ 10 3.266 0 180.000 ] name "maria" color "firebrick")
+erratic( pose [ 3.277 2.266 0 180.000 ] name "joao" color "gold")
+erratic( pose [ 7.2 6.6 0 180.000 ] name "michelangelo" color "steel blue")
+erratic( pose [ 11.277 6.6 0 180.000 ] name "donatello" color "sea green")

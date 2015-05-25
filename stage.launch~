@@ -1,0 +1,4 @@
+<launch>
+    <node name="stage" pkg="stage_ros" type="stageros"
+          output="screen" args="$(find voronoi)/voronoifour.world" />
+</launch>

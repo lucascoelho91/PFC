@@ -22,6 +22,14 @@
 
 	<param name="voronoi/robotConfFileName" type="string" value="/home/lucas/catkin_ws/src/voronoi/voronoi.conf"/>
 
+	<param name="voronoi/imagesDir" type="string" value="/home/lucas/catkin_ws/src/voronoi/images"/>
+
+    <param name="voronoi/kp" type="double" value="0.05"/>
+
+    <param name="voronoi/kw" type="double" value="0.05"/>
+
+    <param name="voronoi/d" type="double" value="0.05"/>
+
     <node name="graph" pkg="voronoi" type="voronoi"
           output="screen" args="1" />
 

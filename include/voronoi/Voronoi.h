@@ -64,7 +64,7 @@ class Voronoi
 
 		Voronoi(ros::NodeHandle* n, int id);
 
-        void runIteration();
+        void runIteration(const ros::TimerEvent&);
         int getIterations();
 };
 

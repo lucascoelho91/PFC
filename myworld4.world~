@@ -1,6 +1,6 @@
 define block model
 (
-  size [0.5 0.5 0.5]
+  size [0.500 0.500 0.500]
   gui_nose 0
 )
 
@@ -20,11 +20,11 @@ define topurg ranger
 define erratic position
 (
   #size [0.415 0.392 0.25]
-  size [0.5 0.5 0.5]
-  origin [-0.05 0 0 0]
+  size [0.350 0.350 0.250]
+  origin [-0.050 0.000 0.000 0.000]
   gui_nose 1
   drive "diff"
-  topurg(pose [ 0.050 0.000 0 0.000 ])
+  topurg(pose [ 0.050 0.000 0.000 0.000 ])
 )
 
 define floorplan model
@@ -41,7 +41,7 @@ define floorplan model
   gui_outline 0
   gripper_return 0
   fiducial_return 0
-  laser_return 1
+  laser_return  1
 )
 
 # set the resolution of the underlying raytrace model in meters
@@ -52,24 +52,21 @@ interval_sim 100  # simulation timestep in milliseconds
 
 window
 ( 
-  size [ 800.000 600.000 ] 
-
-  rotate [ 0.000 0.0 ]
-  center [ 10.5  8 ]
-  scale 28.806 
+  size [ 1000 1000 ]
 )
 
 # load an environment bitmap
 floorplan
 ( 
-  name "willow"
   bitmap "map.pgm"
-  size [20 20 0.5]
-  pose [ 10.5 8 0 0 ]
+  size [50.000 50.000 0.500]
+  pose [ 5.0 5.0 0.000 0.000 ]
 )
 
-# throw in two robots
-erratic( pose [ 10 3.266 0 180.000 ] name "maria" color "firebrick")
-erratic( pose [ 3.277 2.266 0 180.000 ] name "joao" color "gold")
-erratic( pose [ 7.2 6.6 0 180.000 ] name "michelangelo" color "steel blue")
-erratic( pose [ 11.277 6.6 0 180.000 ] name "donatello" color "sea green")
+# throw in a robot
+#erratic( pose [ -9.659 0.535 0.000 -89.791 ] name "Stupid" color "blue")
+erratic( pose [9.82129962924581	5.86056347739664 0.00 0.00] name "robot0" color "red")
+erratic( pose [8.78288812987608	2.83112752080675 0.00 0.00] name "robot1" color "red")
+erratic( pose [6.47775640870190	2.30885555922564 0.00 0.00] name "robot2" color "green")
+erratic( pose [7.06508196336295	0.96778128499548 0.00 0.00] name "robot3" color "green")
+

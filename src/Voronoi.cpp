@@ -30,8 +30,7 @@ void Voronoi::initRobots()
 {
 	std::string robotConfFileName;
 
-	cout << "hi";
-	cout.flush();
+	double kp, kw, d;
 
 	if(ros::param::get("/voronoi/robotConfFileName", robotConfFileName));
     else{
@@ -39,8 +38,23 @@ void Voronoi::initRobots()
         exit(1);
     }
 
-    cout << "hi";
-    cout.flush();
+	if(ros::param::get("/voronoi/kp", kp));
+    else{
+        ROS_INFO("Error getting robot configuration file name parameter");
+        exit(1);
+    }
+
+	if(ros::param::get("/voronoi/kw", kw));
+    else{
+        ROS_INFO("Error getting robot configuration file name parameter");
+        exit(1);
+    }
+
+	if(ros::param::get("/voronoi/d", d));
+    else{
+        ROS_INFO("Error getting robot configuration file name parameter");
+        exit(1);
+    }
 
     int i = 1;
 
@@ -54,15 +68,10 @@ void Voronoi::initRobots()
 	std::ifstream robotConfFile;
 	robotConfFile.open(robotConfFileName.c_str());
 	std::getline(robotConfFile, dirt);
-	cout << dirt;
 	std::getline(robotConfFile, dirt);
-	cout << dirt;
-cout << "hi";
 
-    cout.flush();
 	while(!robotConfFile.eof())
 	{
-		cout << "hi" << endl;
 
 		if(robotConfFile >> id >> weight >> red >> green >> blue)
 		{
@@ -71,7 +80,6 @@ cout << "hi";
 			color.b = (unsigned char) blue;
 			color.g = (unsigned char) green;
 
-			std::cout << id << weight << color.r << color.g << color.b;
 			Robot rbx(id, weight, color, name);
 			rbx.pose.x = 2*i;
 			rbx.pose.y = 2.5*i;
@@ -87,8 +95,6 @@ cout << "hi";
 		}
 	}
 
-	cout << "robot configuration done";
-    cout.flush();
 }
 
 
@@ -121,6 +127,8 @@ Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 	this->initRobots();
 	iterations = 0;
 
+	controlLawType = PIMENTA_FIGUEIREDO;
+
 	controlledRobot = getrobotByID(id_master);
 
 	setROSSubscribers(sulfixPose);
@@ -148,11 +156,7 @@ void Voronoi::voronoiDijkstra()
 	for(int i=0; i<robots.size(); i++)
 	{
 		robot = &robots[i];
-		cout << "getting node" << endl;
-		cout.flush();
 		n = graph.PoseToNode(robot->pose.x, robot->pose.y );
-		printf("%p\n", n);
-		cout.flush();
 
 		robot->clearControlLaw();
 
@@ -165,8 +169,6 @@ void Voronoi::voronoiDijkstra()
 		PQ.push(k);
 	}
 
-	cout << "Initialized node OK" << endl;
-	cout.flush();
 
 	// dijkstra loop
 	while(!PQ.empty())   // no elements on the queue anymore
@@ -189,8 +191,6 @@ void Voronoi::voronoiDijkstra()
 			n->owner = robot;
 		}
 
-		cout << "got node" << endl;
-		cout.flush();
 
 		geodist = k.geoDist;
 		// iterating on all neighbors
@@ -265,9 +265,14 @@ void Voronoi::setROSSubscribers(std::string sulfixPose)
 {
 	std::vector<Robot>::iterator it;
 	std::string topic;
+	char str[50];
 	for(it = robots.begin(); it!=robots.end(); ++it)
 	{
-		topic = "/" + it->getName() + "/" + sulfixPose;
+		topic = "/robot_";
+		sprintf(str, "%d", it->id);
+		topic.append(str);
+		topic.append("/");
+		topic.append(sulfixPose);
 		it->setPoseSubscriber(*nh, topic);
 	}
 }
@@ -276,15 +281,21 @@ void Voronoi::setROSPublishers(std::string sulfixSpeed)
 {
 	std::vector<Robot>::iterator it;
 	std::string topic;
+	char str[50];
 	for(it = robots.begin(); it!=robots.end(); ++it)
 	{
-		topic = "/" + it->getName() + "/" + sulfixSpeed;
+		topic = "/robot_";
+		sprintf(str, "%d", it->id);
+		topic.append(str);
+		topic.append("/");
+		topic.append(sulfixSpeed);
 		it->setSpeedPublisher(*nh, topic);
 	}
 }
 
-void Voronoi::runIteration()
+void Voronoi::runIteration(const ros::TimerEvent&)
 {
+	ros::spinOnce();
 	this->voronoiDijkstra();
 	cout << "Dijkstra OK" << endl;
 	cout.flush();
@@ -364,8 +375,6 @@ void Voronoi::saveCosts()
         }
     }
 
-    cout << "copying empty file OK" << endl;
-	cout.flush();
 
 	for(int i = 0; i < graph.vertices.x; i++)
 	{
@@ -373,30 +382,20 @@ void Voronoi::saveCosts()
 		{
 			x = (i * graph.squareSize + graph.squareSize/2);
             y = (j * graph.squareSize + graph.squareSize/2);
-            cout << "checking node... x:" << x << "; y:" << y << endl;
-			cout.flush();
 
 			n = graph.getNodeByIndex(i, j);
 
 			if(n!=NULL)
 			{
-				cout << "node not null" << endl;
-				cout.flush();
 
 				if(n->owner!=NULL)  // H cost funcition
 				{
 					H += (pow(n->powerDist, 2) + pow(n->owner->weight,2))*(n->phi)*dq;
-					cout << "H calculation OK" << endl;
-					cout.flush();
 					// printing
 					graph.FillSquare(x, y, n->owner->color);
-					cout << "visualization writing ok" << endl;
-					cout.flush();
 					n->CleanNode();
-					cout << "cleaning node OK" << endl;
 				}
 
-				cout.flush();
 			}
 		}
 	}
