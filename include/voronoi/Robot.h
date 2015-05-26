@@ -36,6 +36,7 @@ class Robot : public controlLaw
         rgb color;        //agent color in visualization
         std::string name; //name of the agent on the topic
         char status;	  //status
+        node* occupied_node;
 
         geometry_msgs::Twist speed; //speed ROS structure
 		nav_msgs::Odometry poseOdom;    //position of the agent

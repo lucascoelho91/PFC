@@ -24,9 +24,9 @@
 
 	<param name="voronoi/imagesDir" type="string" value="/home/lucas/catkin_ws/src/voronoi/images"/>
 
-    <param name="voronoi/kp" type="double" value="0.05"/>
+    <param name="voronoi/kp" type="double" value="1"/>
 
-    <param name="voronoi/kw" type="double" value="0.05"/>
+    <param name="voronoi/kw" type="double" value="0.5"/>
 
     <param name="voronoi/d" type="double" value="0.05"/>
 

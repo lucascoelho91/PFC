@@ -354,14 +354,9 @@ node* Graph::PoseToNode(double x, double y)
 {
     node* vx;
     int i, j;
-    cout << "x: " << x << "y: " << y << endl;
 
-    cout << "escala: " << getSquareSize() << endl;
-    cout << "escala: " << getSizeMetersPixel() << endl;
     i = y/(sizeMetersPixel* squareSize);
     j = x/(sizeMetersPixel* squareSize);
-    cout << "x: " << j << "y: " << i << endl;
-    cout.flush();
     vx = matrixGraph[i][j];
     return vx;
 }

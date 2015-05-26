@@ -81,6 +81,7 @@ void Voronoi::initRobots()
 			color.g = (unsigned char) green;
 
 			Robot rbx(id, weight, color, name);
+			rbx.setControllerParameters(kp, kw, d);
 			rbx.pose.x = 2*i;
 			rbx.pose.y = 2.5*i;
 			i++;
@@ -141,7 +142,7 @@ Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 void Voronoi::voronoiDijkstra()
 {
 	Robot* robot;
-	node* n, *neighbor;
+	node* n, *neighbor, *s;
 	dijkCost k;
 	double ncost, pdist;
 	double cost;
@@ -157,7 +158,8 @@ void Voronoi::voronoiDijkstra()
 	{
 		robot = &robots[i];
 		n = graph.PoseToNode(robot->pose.x, robot->pose.y );
-
+		robot->occupied_node = n;
+		n->has_robot = true;
 		robot->clearControlLaw();
 
 		k.powerDist = - pow(robot->weight,2);
@@ -177,6 +179,7 @@ void Voronoi::voronoiDijkstra()
 		PQ.pop();        // and removes it
 		robot = k.rbx;
 		n = k.vNode;
+		s = k.s;
 		if(n == NULL) continue;
 		// if the cost is bigger,there is no reason to continue the calculations
 		if (k.powerDist > n->powerDist) continue;
@@ -214,8 +217,10 @@ void Voronoi::voronoiDijkstra()
 					k.vNode = neighbor;
 					k.rbx = robot;
 					k.geoDist = geodist + ncost;
-					if(k.s == NULL)  // a null k.s occurs when it is an start node
+					if(n->has_robot == true)  // a null k.s occurs when it is an start node
 						k.s = neighbor;
+					else
+						k.s = s;
 					PQ.push(k);
 				}
 			}
@@ -225,13 +230,15 @@ void Voronoi::voronoiDijkstra()
 	//** neighbor best aligned with the goal **//
 	Vector2 neighborVector;
 	double scalarProduct;
-	int maxVec = 0;
-	int argMaxIndex = 0;
+	int maxVec = -9999999;
+	int argMaxIndex = -1;
 
 	for(int i=0; i < robots.size(); i++)
 	{
 		robot = &robots[i];
 		n = graph.PoseToNode(robot->pose.x, robot->pose.y);
+		maxVec = -9999999;
+		argMaxIndex = -1;
 		for(int j=0; j< 8; j++)
 		{
 			neighbor = n->neighbor[j];
@@ -246,7 +253,10 @@ void Voronoi::voronoiDijkstra()
 				}
 			}
 		}
-		robots[i].goal = n->neighbor[argMaxIndex]->pose;
+		if(argMaxIndex==-1)
+			robots[i].goal = robots[i].pose;
+		else
+			robots[i].goal = n->neighbor[argMaxIndex]->pose;
 	}
 }
 
@@ -297,14 +307,8 @@ void Voronoi::runIteration(const ros::TimerEvent&)
 {
 	ros::spinOnce();
 	this->voronoiDijkstra();
-	cout << "Dijkstra OK" << endl;
-	cout.flush();
 	this->calcControlLaw();
-	cout << "Control law OK" << endl;
-	cout.flush();
 	this->saveCosts();
-	cout << "Save costs OK" << endl;
-	cout.flush();
 	iterations++;
 }
 
@@ -316,33 +320,46 @@ int Voronoi::getIterations()
 void Voronoi::calcControlLaw()
 {
 	int i;
-	double theta = controlledRobot->getTheta();
-	double errorX = controlledRobot->getErrorX();
-	double errorY = controlledRobot->getErrorY();
-	double kv = controlledRobot->kv;
-	double kw = controlledRobot->kw;
-	double d = controlledRobot->d;
+	Robot* robot;
 
-	double normControlIntegral = controlledRobot->getNormControlIntegral();
-
-	double v = 0, w = 0;
-
-	if(controlLawType == PIERSON_FIGUEIREDO)
+	for(i=0; i<robots.size(); i++)
 	{
+		robot = &robots[i];
+		double theta = robot->getTheta();
+		double errorX = robot->getErrorX();
+		double errorY = robot->getErrorY();
+		double kv = robot->kv;
+		double kw = robot->kw;
+		double d = robot->d;
 
-	}
-	else if(controlLawType == PIMENTA_FIGUEIREDO)
-	{
-		if(kv > normControlIntegral) // so the robot will eventually stop
+		double normControlIntegral = robot->getNormControlIntegral();
+
+		double v = 0, w = 0;
+
+		if(controlLawType == PIERSON_FIGUEIREDO)
 		{
-			kw = kw/kv * normControlIntegral;
-			kv = normControlIntegral;
-		}
-		double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
-        double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
 
-        controlledRobot->setSpeed(v, w);
-        controlledRobot->publishSpeed();
+		}
+		else if(controlLawType == PIMENTA_FIGUEIREDO)
+		{
+			if(kv > normControlIntegral) // so the robot will eventually stop
+			{
+				kw = kw/kv * normControlIntegral;
+				kv = normControlIntegral;
+			}
+			double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
+			double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
+
+
+			if(fabs(v) > 1)
+				v = v/fabs(v);
+			if(fabs(w) > 1)
+				w = w/fabs(w);
+
+			robot->setSpeed(v, w);
+
+			robot->publishSpeed();
+		}
 	}
 }
 
@@ -393,8 +410,8 @@ void Voronoi::saveCosts()
 					H += (pow(n->powerDist, 2) + pow(n->owner->weight,2))*(n->phi)*dq;
 					// printing
 					graph.FillSquare(x, y, n->owner->color);
-					n->CleanNode();
 				}
+				n->CleanNode();
 
 			}
 		}

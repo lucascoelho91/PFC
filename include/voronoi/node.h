@@ -15,9 +15,11 @@ class node  //represents the nodees of the graph
 	    Robot* owner; //robot that owns this node
         double powerDist; //powerDist calculated at this node
         double phi;  //density function
+        bool has_robot;
 
         void CleanNode()
         {
+        	has_robot = false;
         	owner = NULL;
         	powerDist = 99999999;
         }

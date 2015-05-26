@@ -23,7 +23,7 @@ int main(int argc,char** argv)
 
 	Voronoi voronoiAdapting(&nh, id);
 
-	ros::Duration loopFreq(0.2);
+	ros::Duration loopFreq(0.5);
 
 	ros::Timer timer = nh.createTimer(loopFreq, &Voronoi::runIteration, &voronoiAdapting);
 	

@@ -56,7 +56,7 @@ window
 
   rotate [ 0.000 0.0 ]
   center [ 10.5  8 ]
-  scale 28.806 
+  scale 20 
 )
 
 # load an environment bitmap
@@ -65,7 +65,7 @@ floorplan
   name "willow"
   bitmap "map.pgm"
   size [20 20 0.5]
-  pose [ 10.5 8 0 0 ]
+  pose [ 10 10 0 0 ]
 )
 
 # throw in two robots
