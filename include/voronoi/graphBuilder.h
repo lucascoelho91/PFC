@@ -79,6 +79,7 @@ class Graph  //
         void FillSquare(double x, double y, rgb color);
 
         void DrawSquare(int size, int i, int j, rgb pixel);
+        void DrawArrow(int size, int width, int i, int j, rgb pixel);
 
         void init (double sizeDiscretization, char* file, double sizeMetersPixel, char* outFile);
         node* getNodeByIndex(int x, int y);

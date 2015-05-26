@@ -9,7 +9,7 @@ void Robot::setSpeedPublisher(ros::NodeHandle& nh, std::string topicName){
 }
 
 void Robot::setPoseSubscriber(ros::NodeHandle& nh, std::string topicName){
-	poseSub = nh.subscribe(topicName, 10, &Robot::poseCallback, this); 
+	poseSub = nh.subscribe(topicName, 2, &Robot::poseCallback, this);
 }
 
 void Robot::poseCallback(const nav_msgs::OdometryConstPtr& msg){
@@ -42,6 +42,7 @@ Robot::Robot(int id, double weight,
 	this->weight = weight;
 	this->color = color;
 	this->name = name;
+	this->status = IDLE;
 }
 
 double Robot::getX(){
@@ -53,15 +54,15 @@ double Robot::getY(){
 }
 
 double Robot::getErrorX(){
-	return goal.x - getX();
+	return centroid.x - getX();
 }	
 
 double Robot::getErrorY(){
-	return goal.y - getY();
+	return centroid.y - getY();
 }
 
 double Robot::getTheta(){
-	return poseOdom.pose.pose.orientation.z;
+	return tf::getYaw(poseOdom.pose.pose.orientation);
 }
 
 void Robot::clearControlLaw() //clear all fields
@@ -70,4 +71,7 @@ void Robot::clearControlLaw() //clear all fields
 	controlIntegral.y = 0;
 	centroid.x = 0;
 	centroid.y = 0;
+	sum_coord.x=0;
+	sum_coord.y=0;
+	sum_cost=0;
 }

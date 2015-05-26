@@ -19,6 +19,7 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <tf/tf.h>
 
 #include <voronoi/rgb.h>
 #include <voronoi/Vector2.h>
@@ -27,6 +28,9 @@
 
 class node;
 
+const char MOVING = 1;
+const char GOAL_REACHED = 2;
+const char IDLE = 3;
 
 class Robot : public controlLaw
 {
@@ -38,12 +42,18 @@ class Robot : public controlLaw
         char status;	  //status
         node* occupied_node;
 
+        double sum_cost;
+        Vector2 sum_coord;
+        int sum_nodes;
+
         geometry_msgs::Twist speed; //speed ROS structure
 		nav_msgs::Odometry poseOdom;    //position of the agent
 		Vector2 pose;       //simpler way to represent the position
 
 		ros::Publisher speedPub;    //ROS speed publisher
 		ros::Subscriber poseSub; //ROS position subscriber
+
+
 
 		void publishSpeed();
 		void setSpeedPublisher(ros::NodeHandle& nh, std::string topicName);

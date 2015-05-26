@@ -82,11 +82,9 @@ void Voronoi::initRobots()
 
 			Robot rbx(id, weight, color, name);
 			rbx.setControllerParameters(kp, kw, d);
-			rbx.pose.x = 2*i;
-			rbx.pose.y = 2.5*i;
-			i++;
 			rbx.controlIntegral.x = 0;
 			rbx.controlIntegral.y = 0;
+			rbx.clearControlLaw();
 
 			robots.push_back(rbx);
 		}
@@ -236,27 +234,36 @@ void Voronoi::voronoiDijkstra()
 	for(int i=0; i < robots.size(); i++)
 	{
 		robot = &robots[i];
-		n = graph.PoseToNode(robot->pose.x, robot->pose.y);
-		maxVec = -9999999;
-		argMaxIndex = -1;
-		for(int j=0; j< 8; j++)
+		if(robot->status == IDLE || robot->status == GOAL_REACHED)
 		{
-			neighbor = n->neighbor[j];
-			if(neighbor != NULL)
+			n = graph.PoseToNode(robot->pose.x, robot->pose.y);
+			maxVec = -9999999;
+			argMaxIndex = -1;
+			for(int j=0; j< 8; j++)
 			{
-				neighborVector = vectorSub(neighbor->pose, robots[i].pose);
-				scalarProduct = vectorScalarProduct(neighborVector, robots[i].controlIntegral);
-				if(maxVec < scalarProduct)
+				neighbor = n->neighbor[j];
+				if(neighbor != NULL)
 				{
-					maxVec = scalarProduct;
-					argMaxIndex = j;
+					neighborVector = vectorSub(neighbor->pose, robots[i].pose);
+					scalarProduct = vectorScalarProduct(neighborVector, robots[i].controlIntegral);
+					if(maxVec < scalarProduct)
+					{
+						maxVec = scalarProduct;
+						argMaxIndex = j;
+					}
 				}
 			}
+			if(argMaxIndex==-1)
+			{
+				robots[i].goal = robots[i].pose;
+				robot->status = IDLE;
+			}
+			else
+			{
+				robots[i].goal = n->neighbor[argMaxIndex]->pose;
+				robot->status = MOVING;
+			}
 		}
-		if(argMaxIndex==-1)
-			robots[i].goal = robots[i].pose;
-		else
-			robots[i].goal = n->neighbor[argMaxIndex]->pose;
 	}
 }
 
@@ -321,44 +328,70 @@ void Voronoi::calcControlLaw()
 {
 	int i;
 	Robot* robot;
+	CalculateCentroid();
 
 	for(i=0; i<robots.size(); i++)
 	{
 		robot = &robots[i];
-		double theta = robot->getTheta();
-		double errorX = robot->getErrorX();
-		double errorY = robot->getErrorY();
-		double kv = robot->kv;
-		double kw = robot->kw;
-		double d = robot->d;
-
-		double normControlIntegral = robot->getNormControlIntegral();
-
-		double v = 0, w = 0;
-
-		if(controlLawType == PIERSON_FIGUEIREDO)
+		if(robot->status == MOVING)
 		{
+			double theta = robot->getTheta();
+			double errorX = robot->getErrorX();
+			double errorY = robot->getErrorY();
+			double kv = robot->kv;
+			double kw = robot->kw;
+			double d = robot->d;
 
-		}
-		else if(controlLawType == PIMENTA_FIGUEIREDO)
-		{
-			if(kv > normControlIntegral) // so the robot will eventually stop
+			double normControlIntegral = robot->getNormControlIntegral();
+
+			double v = 0, w = 0;
+			double thetaError = 0, d0 = 0, norm = 0;
+
+			if(controlLawType == PIERSON_FIGUEIREDO)
 			{
-				kw = kw/kv * normControlIntegral;
-				kv = normControlIntegral;
+
 			}
-			double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
-			double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
+			else if(controlLawType == PIMENTA_FIGUEIREDO)
+			{
+				thetaError = atan2(errorY , errorX);
 
+				d0 = thetaError - robot->getTheta();
 
-			if(fabs(v) > 1)
-				v = v/fabs(v);
-			if(fabs(w) > 1)
-				w = w/fabs(w);
+				norm = sqrt(errorX*errorX + errorY*errorY);
 
-			robot->setSpeed(v, w);
+				v = kv * norm;
+				w = kw * d0;
 
-			robot->publishSpeed();
+				if(fabs(d0) > 0.5)
+					v = 0;
+
+				//if(kv > normControlIntegral) // so the robot will eventually stop
+				//{
+				//	kw = kw/kv * normControlIntegral;
+				//	kv = normControlIntegral;
+				//}
+
+				//double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
+				//double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
+
+				if( isnan(v) || isnan(w))
+				{
+					v = 0;
+					w = 0;
+				}
+
+				if(fabs(v) > 1)
+					v = v/fabs(v);
+				if(fabs(w) > 1)
+					w = w/fabs(w);
+
+				robot->setSpeed(v, w);
+
+				robot->publishSpeed();
+
+				if(norm < graph.getSquareSize()*graph.getSizeMetersPixel()/2)
+					robot->status = GOAL_REACHED;
+			}
 		}
 	}
 }
@@ -382,6 +415,8 @@ void Voronoi::saveCosts()
 	node* n;
 	Robot* rbx;
 	int x, y;
+
+
 	double dq = graph.getSizeMetersPixel() * graph.getSquareSize();
 
     for(int i = 0; i < graph.dim.y; i++)
@@ -420,6 +455,11 @@ void Voronoi::saveCosts()
 
 	for(int i = 0; i < robots.size(); i++)
     {
+        y = robots[i].centroid.y/(graph.getSizeMetersPixel());
+        x = robots[i].centroid.x/(graph.getSizeMetersPixel());
+        graph.DrawArrow(8, 3, y, x, pixelwhite);
+        graph.DrawArrow(7, 1, y, x, pixelgray);
+
         y = robots[i].pose.y/(graph.getSizeMetersPixel());      //atenção nessa linha se voce trocar o sistema de coordenadas
         x = robots[i].pose.x/(graph.getSizeMetersPixel());
         graph.DrawSquare(3, y, x, pixelblack);
@@ -444,5 +484,45 @@ void Voronoi::saveCosts()
     fclose(outfile);
 
 }
+
+
+
+void Voronoi::CalculateCentroid()
+{
+    int i, j;
+    node*  n;
+    Robot* robot;
+    double dens, pos;
+    for(i=0; i<graph.vertices.y; i++)
+    {
+        for(j=0; j<graph.vertices.x; j++)
+        {
+            n = graph.getNodeByIndex(j, i);
+            if(n != NULL  && n->owner != NULL)
+            {
+            	robot = n->owner;
+                dens = n->phi;
+                robot->sum_cost+= dens;
+                robot->sum_coord.x+= (n->pose.x) * dens;
+                robot->sum_coord.y+= (n->pose.y) * dens;
+                robot->sum_nodes++;
+            }
+        }
+    }
+
+    for(i=0; i < robots.size(); i++)
+    {
+    	robot = &robots[i];
+        pos = robot->sum_coord.x/(robot->sum_cost);
+        robot->centroid.x = pos;
+
+        pos = robot->sum_coord.y/(robot->sum_cost);
+        robot -> centroid.y= pos;
+        robot->sum_coord.x=0;
+        robot->sum_coord.y=0;
+        robot->sum_cost=0;
+    }
+}
+
 
 

@@ -117,11 +117,32 @@ void Graph::DrawSquare(int size, int i, int j, rgb pixel)
     }
 }
 
+void Graph::DrawArrow(int size, int width, int i, int j, rgb pixel)
+{
+    int x, y, k, l;
+    if(size==0)
+    {
+        visualization[i][j]=pixel;
+        return;
+    }
+
+    DrawSquare(width, i, j, pixel);
+    for(x = 1; x < size; x++)
+    {
+		DrawSquare(width, (i + x), j, pixel);
+		DrawSquare(width, i, (j + x), pixel);
+		DrawSquare(width, (i - x), j, pixel);
+		DrawSquare(width, i, (j - x), pixel);
+    }
+}
+
+
 void Graph::FillSquare(double x, double y, rgb colorFill)
 {
-	for (int i = x - squareSize/2; i < x + squareSize/2; i++)
+	int halfSquareSize = ceil((double) squareSize/2);
+	for (int i = x - halfSquareSize; i < x + halfSquareSize; i++)
 	{
-		for (int j = y - squareSize/2; j < y + squareSize/2; j++)
+		for (int j = y - halfSquareSize; j < y + halfSquareSize; j++)
 		{
 			visualization[j][i] = colorFill;
 		}

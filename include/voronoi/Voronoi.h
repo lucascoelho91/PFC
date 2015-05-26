@@ -54,6 +54,7 @@ class Voronoi
 
         void calcControlLaw();
         void saveCosts();
+        void CalculateCentroid();
 
 		void setROSPublishers(std::string sulfixPose = "odom");
 		void setROSSubscribers(std::string sulfixSpeed = "cmd_vel");
