@@ -104,8 +104,10 @@ void Graph::DrawSquare(int size, int i, int j, rgb pixel)
     int x, y, k, l;
     if(size==0)
     {
-        visualization[i][j]=pixel;
-        return;
+    	if((i < 0  || i >= dim.y-1 || j < 0 || j >= dim.x))
+    		return;
+    	else
+    		visualization[i][j]=pixel;
     }
 
     for(y = i-size, k=0; k<size*2 && y<dim.y; k++, y++)
@@ -136,6 +138,18 @@ void Graph::DrawArrow(int size, int width, int i, int j, rgb pixel)
     }
 }
 
+void Graph::DrawCircle(int xc, int yc, int radius, rgb color, int width)
+{
+	double angle, x, y;
+	double step = 0.01;
+	for(angle = 0; angle < 2*PI; angle += step)
+	{
+		x = xc + cos(angle)*radius;
+		y = yc + sin(angle)*radius;
+		DrawSquare(width, y, x, color);
+	}
+}
+
 
 void Graph::FillSquare(double x, double y, rgb colorFill)
 {
@@ -162,6 +176,11 @@ void Graph::verticesAllocation()
         pixelblue.g=0;
         pixelblue.b=255;
 
+        rgb pixelgreen;
+        	pixelgreen.r=0;
+        	pixelgreen.g=255;
+        	pixelgreen.b=0;
+
     for(i=0; i<vertices.y; i++)
     {
         for(j=0; j<vertices.x; j++)
@@ -177,7 +196,7 @@ void Graph::verticesAllocation()
                 n->powerDist = 999999999;
 
                 //COLORIR A IMAGEM DE SAÍDA COM UM PONTO AZUL ONDE HÁ UMA CÉLULA OCUPÁVEL
-                DrawSquare(1, i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelblue);
+                DrawSquare(1, i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelgreen);
             }
             else
             {
@@ -229,7 +248,7 @@ void Graph::connectNeighbors()
     }
 
 
-    for (i=0; i<vertices.y; i++)
+    /*for (i=0; i<vertices.y; i++)
 	{
 		for(j=0; j<vertices.x; j++)
 		{
@@ -250,7 +269,7 @@ void Graph::connectNeighbors()
 				}
 			}
 		}
-	}
+	}*/
 }
 
 Graph::Graph()

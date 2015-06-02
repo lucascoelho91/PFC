@@ -6,6 +6,9 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   tf
+	sensor_msgs
+	cv_bridge
+	image_transport
 )
 
 
@@ -36,10 +39,15 @@ add_library(voronoiLib
    src/Voronoi.cpp
 )
 
+add_library(controlLawLib
+	src/controlLaw.cpp
+)
+
 target_link_libraries(voronoi
 	robotLib	
 	graphLib
 	voronoiLib
+    controlLawLib
    ${catkin_LIBRARIES}
  )
 

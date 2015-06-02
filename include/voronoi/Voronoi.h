@@ -16,6 +16,14 @@
 #include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <sensor_msgs/Image.h>
+#include <image_transport/image_transport.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <voronoi/Robot.h>
 #include <voronoi/graphBuilder.h>
@@ -44,6 +52,9 @@ class Voronoi
 
         int controlLawType;
 
+        sensor_msgs::Image imageMsg;
+    	ros::Publisher imagePub;
+
         static const int PIERSON_FIGUEIREDO = 1;
         static const int PIMENTA_FIGUEIREDO = 2;
 
@@ -64,6 +75,8 @@ class Voronoi
 		void getParameters();
 
 		Voronoi(ros::NodeHandle* n, int id);
+
+		void weightController();
 
         void runIteration(const ros::TimerEvent&);
         int getIterations();

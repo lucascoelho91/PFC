@@ -31,6 +31,8 @@ class node;
 const char MOVING = 1;
 const char GOAL_REACHED = 2;
 const char IDLE = 3;
+const char ON_NULL_NODE = 4;
+const char SHOULD_UPDATE_GOAL = 5;
 
 class Robot : public controlLaw
 {
@@ -42,13 +44,14 @@ class Robot : public controlLaw
         char status;	  //status
         node* occupied_node;
 
-        double sum_cost;
+        double mass;
         Vector2 sum_coord;
         int sum_nodes;
 
         geometry_msgs::Twist speed; //speed ROS structure
 		nav_msgs::Odometry poseOdom;    //position of the agent
 		Vector2 pose;       //simpler way to represent the position
+		Vector2 poseLastGoalSet;
 
 		ros::Publisher speedPub;    //ROS speed publisher
 		ros::Subscriber poseSub; //ROS position subscriber
@@ -63,11 +66,13 @@ class Robot : public controlLaw
 		void setWeight(double p);
 		double getPower();
 		double getTheta();
+		tf::Quaternion getThetaQuaternion();
 		Vector2 getPose();
 		double getX();
 		double getY();
 		double getErrorX();
 		double getErrorY();
+		double getNormError();
 
 		std::string getName();
 		Robot(int id, double weight, rgb color, std::string name);

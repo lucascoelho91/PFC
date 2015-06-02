@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <voronoi/Vector2.h>
 
 class controlLaw
 {
@@ -7,29 +8,23 @@ class controlLaw
 	    Vector2 controlIntegral; //Control Integral
 	    Vector2 centroid;        //Centroid Position
 
-	    double kv;    //Control gain
-	    double kw;  //Control gain w
+	    double kv;    //Control gain for linear velocity
+	    double kw;  //Control gain for angular velocity
+
+	    double kwp; // control gain for weight control
 
 	    double d; // distance for the feedback linearization controller
 
+	    double xdelta;
+	    double ydelta;
+
 	    Vector2 goal;
 
-	    void clear() //clear all fields
-	    { 
-	    	controlIntegral.x = 0; 
-	    	controlIntegral.y = 0;
-	    	centroid.x = 0;
-	    	centroid.y = 0;
-	    }
-
-	void setControllerParameters(double kv_p= 1, double kw_p = 1, double d_p = 0.05)
-	{
-		kv = kv_p;
-		kw = kw_p;
-		d = d_p;
-	}
-
-	double getNormControlIntegral(){
-		return sqrt(pow(controlIntegral.x,2) + pow(controlIntegral.y, 2));
-	}	
+	    void setControllerParameters(double kv_p= 1, double kw_p = 1, double d_p = 0.05, double kwp_p = 0.005);
+	    double getNormControlIntegral();
+	    void clear(); //clear all fields
+	    void setDevianceParameters(double p_xdev, double p_ydev);
+	    double getXDotDeviance(double xdot);
+	    double getYDotDeviance(double ydot);
+	    double getKiNorm();
 };

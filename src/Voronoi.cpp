@@ -30,27 +30,33 @@ void Voronoi::initRobots()
 {
 	std::string robotConfFileName;
 
-	double kp, kw, d;
+	double kp, kw, d, kwp;
 
-	if(ros::param::get("/voronoi/robotConfFileName", robotConfFileName));
+	if(ros::param::get("/voronoi/robotConfFileName", robotConfFileName)){}
     else{
         ROS_INFO("Error getting robot configuration file name parameter");
         exit(1);
     }
 
-	if(ros::param::get("/voronoi/kp", kp));
+	if(ros::param::get("/voronoi/kp", kp)){}
     else{
         ROS_INFO("Error getting robot configuration file name parameter");
         exit(1);
     }
 
-	if(ros::param::get("/voronoi/kw", kw));
+	if(ros::param::get("/voronoi/kw", kw)){}
     else{
         ROS_INFO("Error getting robot configuration file name parameter");
         exit(1);
     }
 
-	if(ros::param::get("/voronoi/d", d));
+	if(ros::param::get("/voronoi/kwp", kwp)){}
+	    else{
+	        ROS_INFO("Error getting robot configuration file name parameter");
+	        exit(1);
+	    }
+
+	if(ros::param::get("/voronoi/d", d)){}
     else{
         ROS_INFO("Error getting robot configuration file name parameter");
         exit(1);
@@ -65,6 +71,7 @@ void Voronoi::initRobots()
 	node* n;
 	std::string dirt;
 	double weight;
+	double xdev, ydev;
 	std::ifstream robotConfFile;
 	robotConfFile.open(robotConfFileName.c_str());
 	std::getline(robotConfFile, dirt);
@@ -73,19 +80,16 @@ void Voronoi::initRobots()
 	while(!robotConfFile.eof())
 	{
 
-		if(robotConfFile >> id >> weight >> red >> green >> blue)
+		if(robotConfFile >> id >> weight >> red >> green >> blue >> xdev >> ydev)
 		{
-
 			color.r = (unsigned char) red;
 			color.b = (unsigned char) blue;
 			color.g = (unsigned char) green;
 
 			Robot rbx(id, weight, color, name);
-			rbx.setControllerParameters(kp, kw, d);
-			rbx.controlIntegral.x = 0;
-			rbx.controlIntegral.y = 0;
+			rbx.setControllerParameters(kp, kw, d, kwp);
+			rbx.setDevianceParameters(xdev, ydev);
 			rbx.clearControlLaw();
-
 			robots.push_back(rbx);
 		}
 		else{
@@ -102,19 +106,19 @@ Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 	this->nh = n;
 	std::string sulfixSpeed, sulfixPose;
 
-	if(ros::param::get("/voronoi/speedTopic", sulfixSpeed));
+	if(ros::param::get("/voronoi/speedTopic", sulfixSpeed)){}
     else{
         ROS_INFO("Error getting speed parameter");
         exit(1);
     }
 
-	if(ros::param::get("/voronoi/poseTopic", sulfixPose));
+	if(ros::param::get("/voronoi/poseTopic", sulfixPose)){}
     else{
         ROS_INFO("Error getting pose parameter");
         exit(1);
     }
 
-	if(ros::param::get("/voronoi/imagesDir", imagesDir));
+	if(ros::param::get("/voronoi/imagesDir", imagesDir)){}
     else{
         ROS_INFO("Error getting images dir parameter");
         exit(1);
@@ -126,6 +130,7 @@ Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 	this->initRobots();
 	iterations = 0;
 
+	imagePub = nh->advertise<sensor_msgs::Image>("Tesselation", 1);
 	controlLawType = PIMENTA_FIGUEIREDO;
 
 	controlledRobot = getrobotByID(id_master);
@@ -155,13 +160,22 @@ void Voronoi::voronoiDijkstra()
 	for(int i=0; i<robots.size(); i++)
 	{
 		robot = &robots[i];
-		n = graph.PoseToNode(robot->pose.x, robot->pose.y );
-		robot->occupied_node = n;
-		n->has_robot = true;
+		n = graph.PoseToNode(robot->pose.x, robot->pose.y);
+
+		if(n ==  NULL)
+		{
+			robot->status = ON_NULL_NODE;
+		}
+		else
+		{
+			robot->occupied_node = n;
+			n->has_robot = true;
+		}
+
 		robot->clearControlLaw();
 
 		k.powerDist = - pow(robot->weight,2);
-		k.vNode = n;
+		k.vNode = robot->occupied_node;
 		k.rbx = robot;
 		k.geoDist = 0;
 		k.s = NULL;
@@ -184,8 +198,8 @@ void Voronoi::voronoiDijkstra()
 
 		if(k.s != NULL) // checks if this is a start node.
 		{
-			double xdif = k.s->pose.x - robot->pose.x;
-			double ydif = k.s->pose.y - robot->pose.y;
+			double xdif = s->pose.x - robot->pose.x;
+			double ydif = s->pose.y - robot->pose.y;
 
 			robot->controlIntegral.x += n->phi*(k.geoDist)*xdif;
 			robot->controlIntegral.y += n->phi*(k.geoDist)*ydif;
@@ -208,6 +222,11 @@ void Voronoi::voronoiDijkstra()
 					ncost *= sqrt(2);   // if it is on diagonal, multiply by sqrt(2)
 				pdist = PowerDist(geodist + ncost, robot->weight);
 
+				if(robot->id == 1)
+				{
+					int h = 30;
+					h = 31;
+				}
 				if( neighbor->powerDist > pdist)  // if the cost is lower than the current cost
 				{
 					neighbor->powerDist = pdist;
@@ -234,9 +253,9 @@ void Voronoi::voronoiDijkstra()
 	for(int i=0; i < robots.size(); i++)
 	{
 		robot = &robots[i];
-		if(robot->status == IDLE || robot->status == GOAL_REACHED)
+		if(robot->status == IDLE || robot->status == GOAL_REACHED || robot->status == SHOULD_UPDATE_GOAL || robot->status == ON_NULL_NODE)
 		{
-			n = graph.PoseToNode(robot->pose.x, robot->pose.y);
+			n = robot->occupied_node;
 			maxVec = -9999999;
 			argMaxIndex = -1;
 			for(int j=0; j< 8; j++)
@@ -262,6 +281,7 @@ void Voronoi::voronoiDijkstra()
 			{
 				robots[i].goal = n->neighbor[argMaxIndex]->pose;
 				robot->status = MOVING;
+				robots[i].poseLastGoalSet = robots[i].goal;
 			}
 		}
 	}
@@ -315,6 +335,7 @@ void Voronoi::runIteration(const ros::TimerEvent&)
 	ros::spinOnce();
 	this->voronoiDijkstra();
 	this->calcControlLaw();
+	this->weightController();
 	this->saveCosts();
 	iterations++;
 }
@@ -329,6 +350,8 @@ void Voronoi::calcControlLaw()
 	int i;
 	Robot* robot;
 	CalculateCentroid();
+	double dq = graph.getSizeMetersPixel() * graph.getSquareSize();
+	tf::Quaternion thetaQ;
 
 	for(i=0; i<robots.size(); i++)
 	{
@@ -342,10 +365,9 @@ void Voronoi::calcControlLaw()
 			double kw = robot->kw;
 			double d = robot->d;
 
-			double normControlIntegral = robot->getNormControlIntegral();
-
 			double v = 0, w = 0;
 			double thetaError = 0, d0 = 0, norm = 0;
+			double normControlIntegral = robot->getNormControlIntegral();
 
 			if(controlLawType == PIERSON_FIGUEIREDO)
 			{
@@ -353,26 +375,23 @@ void Voronoi::calcControlLaw()
 			}
 			else if(controlLawType == PIMENTA_FIGUEIREDO)
 			{
-				thetaError = atan2(errorY , errorX);
+				theta = robot->getTheta();
 
-				d0 = thetaError - robot->getTheta();
+				norm = robot->getNormError();
 
-				norm = sqrt(errorX*errorX + errorY*errorY);
+				errorX = robot->getXDotDeviance(errorX);
+				errorY = robot->getYDotDeviance(errorY);
 
-				v = kv * norm;
-				w = kw * d0;
+				if(kv > normControlIntegral) // so the robot will eventually stop
+				{
+					kw = kw/kv * normControlIntegral;
+					kv = normControlIntegral;
+				}
 
-				if(fabs(d0) > 0.5)
-					v = 0;
 
-				//if(kv > normControlIntegral) // so the robot will eventually stop
-				//{
-				//	kw = kw/kv * normControlIntegral;
-				//	kv = normControlIntegral;
-				//}
 
-				//double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
-				//double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
+				double v = kv*(normControlIntegral/2000)*(cos(theta)*errorX + sin(theta)*errorY);
+				double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
 
 				if( isnan(v) || isnan(w))
 				{
@@ -382,18 +401,29 @@ void Voronoi::calcControlLaw()
 
 				if(fabs(v) > 1)
 					v = v/fabs(v);
-				if(fabs(w) > 1)
-					w = w/fabs(w);
+				if(fabs(w) > 3)
+					w = 3*w/fabs(w);
 
 				robot->setSpeed(v, w);
 
 				robot->publishSpeed();
 
-				if(norm < graph.getSquareSize()*graph.getSizeMetersPixel()/2)
+				if(norm < graph.getSquareSize()*graph.getSizeMetersPixel()/4)
 					robot->status = GOAL_REACHED;
 			}
 		}
+		else if(robot->status == ON_NULL_NODE || robot->status == IDLE || robot->status == SHOULD_UPDATE_GOAL)
+			robot->setSpeed(0,0);
 	}
+}
+
+
+double wrapAngle(double angle)
+{
+	angle = fmod(angle, PI);
+	if (angle < -PI)
+	   angle += 2*PI;
+	return angle;
 }
 
 void Voronoi::saveCosts()
@@ -455,34 +485,51 @@ void Voronoi::saveCosts()
 
 	for(int i = 0; i < robots.size(); i++)
     {
-        y = robots[i].centroid.y/(graph.getSizeMetersPixel());
-        x = robots[i].centroid.x/(graph.getSizeMetersPixel());
-        graph.DrawArrow(8, 3, y, x, pixelwhite);
-        graph.DrawArrow(7, 1, y, x, pixelgray);
+        y = robots[i].goal.y/(graph.getSizeMetersPixel());
+        x = robots[i].goal.x/(graph.getSizeMetersPixel());
+        graph.DrawArrow(4, 1, y, x, pixelgray);
 
         y = robots[i].pose.y/(graph.getSizeMetersPixel());      //atenção nessa linha se voce trocar o sistema de coordenadas
         x = robots[i].pose.x/(graph.getSizeMetersPixel());
         graph.DrawSquare(3, y, x, pixelblack);
+
+        graph.DrawCircle(x, y, robots[i].weight*10, pixelblack, 0);
     }
 
-	FILE* outfile;
+	imageMsg.height=graph.dim.y;
+	imageMsg.width=graph.dim.x;
+	imageMsg.encoding="rgb8";
+	imageMsg.is_bigendian=false;
+	imageMsg.step=graph.dim.x*3;
+	imageMsg.data.resize(3*graph.dim.x*graph.dim.y);
+
 	char str[100];
+	int k=0;
     sprintf(str, "%s/%d-iteration_%d.ppm", imagesDir.c_str(), controlledRobot->id, iterations);
-    outfile=fopen(str, "w+");
-    fprintf(outfile, "P6\n");   //P6 SIGNIFICA CODIFICAÇÃO CRU, COLORIDO, ARQUIVO PPM
-    fprintf(outfile, "%d %d\n", (int)graph.dim.x, (int)graph.dim.y);
-    fprintf(outfile, "255\n");  //ESSE NUMERO REPRESENTA O NUMERO QUE VALE COMO BRANCO
     for(int i = (graph.dim.y - 1); i >= 0; i--)
     {
         for(int j=0; j<graph.dim.x; j++)
         {
-            fprintf(outfile, "%c", graph.visualization[i][j].r);
-            fprintf(outfile, "%c", graph.visualization[i][j].g);
-            fprintf(outfile, "%c", graph.visualization[i][j].b);
+            imageMsg.data[k] = graph.visualization[i][j].r; k++;
+			imageMsg.data[k] = graph.visualization[i][j].g; k++;
+			imageMsg.data[k] = graph.visualization[i][j].b; k++;
         }
     }
-    fclose(outfile);
 
+    sprintf(str, "%s/%d-iteration_%d.png", imagesDir.c_str(), controlledRobot->id, iterations);
+    cv_bridge::CvImagePtr cv_ptr;
+	try
+	{
+	  cv_ptr = cv_bridge::toCvCopy(imageMsg, sensor_msgs::image_encodings::BGR8);
+	}
+	catch (cv_bridge::Exception& e)
+	{
+	  ROS_ERROR("cv_bridge exception: %s", e.what());
+	  return;
+	}
+
+	imagePub.publish(imageMsg);
+	ROS_ASSERT( cv::imwrite( str,  cv_ptr->image ) );      // added this
 }
 
 
@@ -493,6 +540,15 @@ void Voronoi::CalculateCentroid()
     node*  n;
     Robot* robot;
     double dens, pos;
+
+    for(i=0; i < robots.size(); i++)
+    {
+    	robot = &robots[i];
+    	robot->sum_nodes = 0;
+    	robot->sum_coord.x = 0;
+    	robot->sum_coord.y = 0;
+    	robot->mass = 0;
+    }
     for(i=0; i<graph.vertices.y; i++)
     {
         for(j=0; j<graph.vertices.x; j++)
@@ -502,7 +558,7 @@ void Voronoi::CalculateCentroid()
             {
             	robot = n->owner;
                 dens = n->phi;
-                robot->sum_cost+= dens;
+                robot->mass+= dens;
                 robot->sum_coord.x+= (n->pose.x) * dens;
                 robot->sum_coord.y+= (n->pose.y) * dens;
                 robot->sum_nodes++;
@@ -513,15 +569,34 @@ void Voronoi::CalculateCentroid()
     for(i=0; i < robots.size(); i++)
     {
     	robot = &robots[i];
-        pos = robot->sum_coord.x/(robot->sum_cost);
+        pos = robot->sum_coord.x/(robot->mass);
         robot->centroid.x = pos;
 
-        pos = robot->sum_coord.y/(robot->sum_cost);
+        pos = robot->sum_coord.y/(robot->mass);
         robot -> centroid.y= pos;
-        robot->sum_coord.x=0;
-        robot->sum_coord.y=0;
-        robot->sum_cost=0;
     }
+}
+
+void Voronoi::weightController()
+{
+	double weight_i, fk_i, weight_j, fk_j;
+	Robot *robot_i, *robot_j;
+	double kwp, M_i;
+
+	double w_dot;
+	for(int i = 0; i < robots.size(); i++)
+	{
+		robot_i = &robots[i];
+		kwp = robot_i->kwp;
+		M_i = robot_i->mass;
+		w_dot = 0;
+		for(int j = 0; j < robots.size(); j++)
+		{
+			robot_j = &robots[j];
+			w_dot += (-kwp/M_i)*( (robot_i->weight - robot_i->getKiNorm()) - (robot_j->weight - robot_j->getKiNorm()));
+		}
+		robot_i->weight += w_dot;
+	}
 }
 
 

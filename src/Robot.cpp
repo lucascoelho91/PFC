@@ -12,10 +12,21 @@ void Robot::setPoseSubscriber(ros::NodeHandle& nh, std::string topicName){
 	poseSub = nh.subscribe(topicName, 2, &Robot::poseCallback, this);
 }
 
+double getNorm(double x, double y)
+{
+	return sqrt(x*x + y*y);
+}
+
 void Robot::poseCallback(const nav_msgs::OdometryConstPtr& msg){
 	this->poseOdom = *msg;
+
 	pose.x = poseOdom.pose.pose.position.x;
 	pose.y = poseOdom.pose.pose.position.y;
+
+	if(getNorm(pose.x - poseLastGoalSet.x, pose.y - poseLastGoalSet.y) > 1)
+	{
+		this->status = SHOULD_UPDATE_GOAL;
+	}
 }
 
 void Robot::setSpeed(double v, double w){
@@ -54,15 +65,27 @@ double Robot::getY(){
 }
 
 double Robot::getErrorX(){
-	return centroid.x - getX();
+	return goal.x - getX();
 }	
 
 double Robot::getErrorY(){
-	return centroid.y - getY();
+	return goal.y - getY();
+}
+
+double Robot::getNormError(){
+	double x = getErrorX();
+	double y = getErrorY();
+	return sqrt(x*x + y*y);
 }
 
 double Robot::getTheta(){
 	return tf::getYaw(poseOdom.pose.pose.orientation);
+}
+
+tf::Quaternion Robot::getThetaQuaternion(){
+	tf::Quaternion qt;
+	tf::quaternionMsgToTF(poseOdom.pose.pose.orientation, qt);
+	return qt;
 }
 
 void Robot::clearControlLaw() //clear all fields
@@ -73,5 +96,5 @@ void Robot::clearControlLaw() //clear all fields
 	centroid.y = 0;
 	sum_coord.x=0;
 	sum_coord.y=0;
-	sum_cost=0;
+	mass=0;
 }

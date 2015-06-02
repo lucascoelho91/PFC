@@ -1,0 +1,8 @@
+<launch>
+
+<!-- Laser -->
+<include file="$(find voronoi)/hokuyo.launch"/>
+<!-- Robot -->
+<include file="$(find turtlebot_bringup)/launch/minimal.launch"/>
+
+</launch>

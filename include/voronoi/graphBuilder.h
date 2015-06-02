@@ -30,6 +30,8 @@
 
 using namespace std;
 
+static const double PI = 3.14159265358979323844;
+
 class Graph  //
 {
     public:
@@ -80,6 +82,8 @@ class Graph  //
 
         void DrawSquare(int size, int i, int j, rgb pixel);
         void DrawArrow(int size, int width, int i, int j, rgb pixel);
+        void DrawCircle(int xc, int yc, int radius, rgb color, int width);
+
 
         void init (double sizeDiscretization, char* file, double sizeMetersPixel, char* outFile);
         node* getNodeByIndex(int x, int y);

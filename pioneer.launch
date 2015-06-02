@@ -1,0 +1,12 @@
+<launch>
+
+<env name="ROS_MASTER_URI" value ="http://192.168.2.102:11311/" />
+<env name="ROS_HOSTNAME" value ="192.168.2.102" />
+<env name="ROS_IP" value ="192.168.2.102" />
+
+<!-- Laser -->
+<include file="$(find lms1xx)/LMS1xx.launch"/>
+<!-- Robot -->
+<include file="$(find pioneer_robot)/launch/pioneer.launch"/>
+
+</launch>
