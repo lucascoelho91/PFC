@@ -11,7 +11,6 @@ using namespace std;
 
 int main(int argc,char** argv)
 {
-
 	int id = 1;
 	int max_iterations = 10;
 	const string nodeName = "voronoi_" + boost::lexical_cast<std::string>(id);
@@ -27,9 +26,9 @@ int main(int argc,char** argv)
 
 	ros::spinOnce();
 
-	ros::Duration loopFreq(0.2);
+	ros::Duration loopFreq(0.1);
 
-	ros::Timer timer = nh.createTimer(loopFreq, &Voronoi::runIteration, &voronoiAdapting);
+	ros::Timer VoronoiTimer = nh.createTimer(loopFreq, &Voronoi::runIteration, &voronoiAdapting);
 	
 	sleep(2);
 

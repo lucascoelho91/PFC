@@ -40,6 +40,7 @@ void Graph::readMap(uint8_t threshold)
 {
 	int i, j, k;
 	uint8_t c;
+	node n;
     for(i=0; i<dim.y; i++)
     {
         for(j=0; j<dim.x; j++)
@@ -110,9 +111,9 @@ void Graph::DrawSquare(int size, int i, int j, rgb pixel)
     		visualization[i][j]=pixel;
     }
 
-    for(y = i-size, k=0; k<size*2 && y<dim.y; k++, y++)
+    for(y = i-size, k=0; k<size*2 && y<dim.y && y>=0; k++, y++)
     {
-        for(x = j-size, l=0; l<size*2 && x<dim.x; l++, x++)
+        for(x = j-size, l=0; l<size*2 && x<dim.x && x>=0; l++, x++)
         {
             visualization[y][x]=pixel;
         }
@@ -154,9 +155,9 @@ void Graph::DrawCircle(int xc, int yc, int radius, rgb color, int width)
 void Graph::FillSquare(double x, double y, rgb colorFill)
 {
 	int halfSquareSize = ceil((double) squareSize/2);
-	for (int i = x - halfSquareSize; i < x + halfSquareSize; i++)
+	for (int i = y - halfSquareSize; i < y + halfSquareSize && x < dim.y && x >= 0; i++)
 	{
-		for (int j = y - halfSquareSize; j < y + halfSquareSize; j++)
+		for (int j = x - halfSquareSize; j < x + halfSquareSize && j < dim.x && j >= 0; j++)
 		{
 			visualization[j][i] = colorFill;
 		}
@@ -196,14 +197,14 @@ void Graph::verticesAllocation()
                 n->powerDist = 999999999;
 
                 //COLORIR A IMAGEM DE SAÍDA COM UM PONTO AZUL ONDE HÁ UMA CÉLULA OCUPÁVEL
-                DrawSquare(1, i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelgreen);
+                FillSquare(i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelgreen);
             }
-            else
+            /*else
             {
                 //SE É NULO, NÃO É ALOCADO UMA CÉLULA E A IMAGEM RECEBE UM PONTO VERMELHO NO LOCAL DA CÉLULA
 
-                DrawSquare(1, i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelred);
-            }
+                FillSquare(i*squareSize + squareSize/2 , j*squareSize + squareSize/2 , pixelred);
+            }*/
         }
     }
 }
@@ -305,9 +306,9 @@ void Graph::init (double sizeDiscretization, char* file, double resolution, char
 
     /***** ALOCAÇÃO DAS VARIÁVEIS PRINCIPAIS ******************/
 
-    node vertexToPoint; //É UMA VARIÁVEL node UTILIZADA SOMENTE PARA NÃO APONTARMOS PARA UMA COISA QUE NÃO SEJA UM node
+    node* vertexToPoint; //É UMA VARIÁVEL node UTILIZADA SOMENTE PARA NÃO APONTARMOS PARA UMA COISA QUE NÃO SEJA UM node
                             //TODAS OS VÉRTICES ALOCADOS DE node*** graph APONTARÃO PRA vertexToPoint
-
+    vertexToPoint = (node*) malloc(sizeof(node));
     colors=(rgb**) malloc(dim.y*sizeof(rgb*));
     for(i=0; i<dim.y; i++)
     {
@@ -325,7 +326,7 @@ void Graph::init (double sizeDiscretization, char* file, double resolution, char
         std::vector <node*> row;
         for(j=0; j<=vertices.x; j++)
         {
-            row.push_back(&vertexToPoint);
+            row.push_back(vertexToPoint);
         }
         matrixGraph.push_back(row);
     }

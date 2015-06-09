@@ -6,7 +6,7 @@
 double PowerDist(double x, double r)  // calculates the weighted dist
 {
     double h;
-    h= (x*x - r*r);
+    h= (x*x - 5*r*r);
     return (h);
 }
 
@@ -137,6 +137,11 @@ Voronoi::Voronoi(ros::NodeHandle* n, int id_master)
 
 	setROSSubscribers(sulfixPose);
 	setROSPublishers(sulfixSpeed);
+
+	HfuncOutput = fopen("/home/lucas/catkin_ws/src/voronoi/H.txt", "w");
+	RobotWeigthOutput = fopen("/home/lucas/catkin_ws/src/voronoi/weightRobots.txt", "w");
+	RobotWeigthFunctionOutput =  fopen("/home/lucas/catkin_ws/src/voronoi/WeightFunction.txt", "w");
+	TimeAtBegin = ros::Time::now();
 }
 
 
@@ -165,6 +170,8 @@ void Voronoi::voronoiDijkstra()
 		if(n ==  NULL)
 		{
 			robot->status = ON_NULL_NODE;
+			robot->occupied_node->has_robot = true;
+			n->owner = robot;
 		}
 		else
 		{
@@ -174,7 +181,7 @@ void Voronoi::voronoiDijkstra()
 
 		robot->clearControlLaw();
 
-		k.powerDist = - pow(robot->weight,2);
+		k.powerDist = PowerDist(0, robot->weight);
 		k.vNode = robot->occupied_node;
 		k.rbx = robot;
 		k.geoDist = 0;
@@ -192,7 +199,7 @@ void Voronoi::voronoiDijkstra()
 		robot = k.rbx;
 		n = k.vNode;
 		s = k.s;
-		if(n == NULL) continue;
+		if(n == NULL || n < reinterpret_cast<node*>(4095) || n->owner != NULL) continue;
 		// if the cost is bigger,there is no reason to continue the calculations
 		if (k.powerDist > n->powerDist) continue;
 
@@ -214,7 +221,7 @@ void Voronoi::voronoiDijkstra()
 			neighbor = n->neighbor[i];
 
 
-			if(neighbor != NULL) // checks if it is an obstacle!
+			if(neighbor != NULL && neighbor > reinterpret_cast<node*>(4095)) // checks if it is an obstacle!
 			{
 				ncost = graph.getSquareSize()*graph.getSizeMetersPixel();
 
@@ -222,11 +229,6 @@ void Voronoi::voronoiDijkstra()
 					ncost *= sqrt(2);   // if it is on diagonal, multiply by sqrt(2)
 				pdist = PowerDist(geodist + ncost, robot->weight);
 
-				if(robot->id == 1)
-				{
-					int h = 30;
-					h = 31;
-				}
 				if( neighbor->powerDist > pdist)  // if the cost is lower than the current cost
 				{
 					neighbor->powerDist = pdist;
@@ -258,6 +260,7 @@ void Voronoi::voronoiDijkstra()
 			n = robot->occupied_node;
 			maxVec = -9999999;
 			argMaxIndex = -1;
+			if(n == NULL || n < reinterpret_cast<node*>(4095)) continue;
 			for(int j=0; j< 8; j++)
 			{
 				neighbor = n->neighbor[j];
@@ -390,7 +393,7 @@ void Voronoi::calcControlLaw()
 
 
 
-				double v = kv*(normControlIntegral/2000)*(cos(theta)*errorX + sin(theta)*errorY);
+				double v = kv*(cos(theta)*errorX + sin(theta)*errorY);
 				double w = kw*(-sin(theta)*errorX/d + cos(theta)*errorY/d);
 
 				if( isnan(v) || isnan(w))
@@ -414,6 +417,7 @@ void Voronoi::calcControlLaw()
 		}
 		else if(robot->status == ON_NULL_NODE || robot->status == IDLE || robot->status == SHOULD_UPDATE_GOAL)
 			robot->setSpeed(0,0);
+			robot->publishSpeed();
 	}
 }
 
@@ -474,10 +478,9 @@ void Voronoi::saveCosts()
 				{
 					H += (pow(n->powerDist, 2) + pow(n->owner->weight,2))*(n->phi)*dq;
 					// printing
-					graph.FillSquare(x, y, n->owner->color);
+					graph.FillSquare(y, x, n->owner->color);
 				}
 				n->CleanNode();
-
 			}
 		}
 	}
@@ -493,7 +496,7 @@ void Voronoi::saveCosts()
         x = robots[i].pose.x/(graph.getSizeMetersPixel());
         graph.DrawSquare(3, y, x, pixelblack);
 
-        graph.DrawCircle(x, y, robots[i].weight*10, pixelblack, 0);
+        graph.DrawCircle(x, y, robots[i].weight*30, pixelblack, 0);
     }
 
 	imageMsg.height=graph.dim.y;
@@ -522,6 +525,7 @@ void Voronoi::saveCosts()
 	{
 	  cv_ptr = cv_bridge::toCvCopy(imageMsg, sensor_msgs::image_encodings::BGR8);
 	}
+
 	catch (cv_bridge::Exception& e)
 	{
 	  ROS_ERROR("cv_bridge exception: %s", e.what());
@@ -529,7 +533,23 @@ void Voronoi::saveCosts()
 	}
 
 	imagePub.publish(imageMsg);
-	ROS_ASSERT( cv::imwrite( str,  cv_ptr->image ) );      // added this
+	ROS_ASSERT( cv::imwrite( str,  cv_ptr->image ) );
+
+	ros::Duration timespan = - (TimeAtBegin - ros::Time::now());
+	double timespanDouble = timespan.sec + (double) timespan.nsec/1000000000;
+	fprintf(HfuncOutput, "%f %f\n", timespanDouble, Hfunc.back());
+
+	fprintf(RobotWeigthOutput, "\n%f ", timespanDouble);
+	fprintf(RobotWeigthFunctionOutput, "\n%f ", timespanDouble);
+
+	for(int i = 0; i < robots.size(); i++)
+	{
+		fprintf(RobotWeigthOutput, "%f ", robots[i].weight);
+		fprintf(RobotWeigthFunctionOutput, "%f ", robots[i].weight - robots[i].getKiNorm());
+	}
+	fflush(HfuncOutput);
+	fflush(RobotWeigthOutput);
+	fflush(RobotWeigthFunctionOutput);
 }
 
 
